@@ -7,8 +7,10 @@ import "./PBBFactory.sol";
 import "./PBBData.sol";
 
 contract PBBImplementation is Initializable {
+    
     PBBFactory public factory;
     mapping(uint256 => address) public pbbContracts;
+    uint256 pbbCounter;
 
     event PBBCreated(uint256 indexed id, address pbbAddress);
     event MessageAdded(uint256 indexed pbbId, string content);
@@ -16,13 +18,15 @@ contract PBBImplementation is Initializable {
     // Inicialización del contrato
     function initialize(address _factory) initializer public {
         factory = PBBFactory(_factory);
+        pbbCounter = 0;
     }
 
     // Crear un nuevo PBB
-    function createPBB(uint256 id, string memory name, address[] memory authUsers) external {
+    function createPBB(string memory name, address[] memory authUsers) external {
         address pbbAddress = factory.createPBB(msg.sender, name, authUsers);
-        pbbContracts[id] = pbbAddress;
-        emit PBBCreated(id, pbbAddress);
+        pbbContracts[pbbCounter] = pbbAddress;
+        emit PBBCreated(pbbCounter, pbbAddress);
+        pbbCounter++;
     }
 
     // Agregar un mensaje a un PBB

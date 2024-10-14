@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";  // Importamos Ownable de OpenZeppelin
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";  // Para manejar el owner de forma sencilla
 
-contract PublicBulletinBoard { 
-
-    //bytes32 public constant WRITER_ROLE = keccak256("WRITER_ROLE");
+contract PublicBulletinBoard is Ownable {
 
     struct Message {
         uint256 id;
@@ -16,38 +13,42 @@ contract PublicBulletinBoard {
     }
 
     address admin;
-    string name;
-    mapping(address => bool) public authorizedUsers;
+    string public name;
     mapping(uint256 => Message) public messages;
+    mapping(address => bool) public authorizedUsers;
     uint256 public nextMessageId;
 
     // Evento para registrar cada nuevo mensaje
     event MessageAdded(uint256 indexed id, address indexed sender, string content, uint256 timestamp);
 
-    
-    
-    constructor(string memory _name, address[] memory _authorizedUsers) {
+    constructor(address _admin, string memory _name, address[] memory _authorizedUsers) Ownable(_admin) {
+        admin = _admin;
         name = _name;
         nextMessageId = 1;
-        
-        // Asignamos el rol de admin al deployer
-        //grantRole(DEFAULT_ADMIN_ROLE, owner);
-        
-        // Añadir usuarios autorizados a la lista y asignarles el rol de escritor
+
+        // Añadir usuarios autorizados
         for (uint256 i = 0; i < _authorizedUsers.length; i++) {
             authorizedUsers[_authorizedUsers[i]] = true;
-            //grantRole(WRITER_ROLE, _authorizedUsers[i]);
         }
+
+        // Hacemos que el admin también esté autorizado por defecto
+        authorizedUsers[admin] = true;
     }
 
+    // Modificador para permitir solo al admin
+    modifier onlyAdmin() {
+        require(tx.origin == admin, "Solo el administrador puede realizar esta accion");
+        _;
+    }
 
+    // Modificador para permitir solo usuarios autorizados
+    modifier onlyAuthorized() {
+        require(authorizedUsers[tx.origin], "No tienes permiso para realizar esta accion");
+        _;
+    }
 
-    // Ahora solo el dueño (owner) puede agregar mensajes
-    function addMessage(string calldata content) external {
-
-        // Usamos tx.origin para verificar que el remitente original está autorizado
-        //require(hasRole(WRITER_ROLE, tx.origin), "No estas autorizado para escribir");
-
+    // Función para agregar un mensaje, solo usuarios autorizados pueden hacerlo
+    function addMessage(string calldata content) external onlyAuthorized {
         messages[nextMessageId] = Message({
             id: nextMessageId,
             sender: msg.sender,
@@ -59,17 +60,14 @@ contract PublicBulletinBoard {
         nextMessageId++;
     }
 
-
-
+    // Obtener un mensaje por su ID
     function getMessageById(uint256 id) external view returns (Message memory) {
         require(id > 0 && id < nextMessageId, "ID de mensaje no valido");
         return messages[id];
     }
 
-
     // Función de paginación para obtener mensajes en un rango
     function getMessagesInRange(uint256 startIndex, uint256 endIndex) external view returns (Message[] memory) {
-        
         require(startIndex < endIndex, "startIndex debe ser menor que endIndex");
         require(endIndex <= nextMessageId, "endIndex fuera de rango");
 
@@ -80,5 +78,20 @@ contract PublicBulletinBoard {
         }
 
         return result;
+    }
+
+    // Función para agregar un nuevo usuario autorizado, solo el admin puede hacerlo
+    function addAuthorizedUser(address newUser) external onlyAdmin {
+        authorizedUsers[newUser] = true;
+    }
+
+    // Función para remover un usuario autorizado, solo el admin puede hacerlo
+    function removeAuthorizedUser(address user) external onlyAdmin {
+        authorizedUsers[user] = false;
+    }
+
+    // Cambiar al administrador, solo el actual administrador puede hacerlo
+    function changeAdmin(address newAdmin) external onlyAdmin {
+        admin = newAdmin;
     }
 }
