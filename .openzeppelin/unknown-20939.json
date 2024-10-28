@@ -5,6 +5,16 @@
       "address": "0x247F250529e6f32154EE5de18af79dc08B2Aa4d8",
       "txHash": "0xa01a2f1d506a161dbd8821e627bd97f569ed754cf131859d5a103c8903c39ec6",
       "kind": "transparent"
+    },
+    {
+      "address": "0x3Fc068260Fe448A32A05DeeBa810Da1e12F063C9",
+      "txHash": "0x37fda057e522c8a32a6bb76cb3ebfef3ef785c627f4e6602247b9e7c1c2c4316",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x9bA4c83E71840A8A2cc3E0cD0e1D1E9E5D3988d9",
+      "txHash": "0xaaf431d22e0a78020769d61de4c4384ae72d2438790eff5f290b24c7dcc5f5ba",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -63,6 +73,103 @@
             "numberOfBytes": "20"
           },
           "t_contract(PBBFactory)1329": {
+            "label": "contract PBBFactory",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "e0c92a8d487b1b880b277766cad2f00c331196330e84c90c85468c7b91f8f87b": {
+      "address": "0xb54Ddd69b1Bef8B833BBA32fE4bD305594dF0ecf",
+      "txHash": "0x93dfd4b9738333de4ff2b903e7d3a68697186ed4fe6711f159ce2722accb757d",
+      "layout": {
+        "solcVersion": "0.8.27",
+        "storage": [
+          {
+            "label": "factory",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(PBBFactory)970",
+            "contract": "PBBImplementation",
+            "src": "contracts\\PBBLogic.sol:11"
+          },
+          {
+            "label": "pbbContracts",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_uint256,t_address)",
+            "contract": "PBBImplementation",
+            "src": "contracts\\PBBLogic.sol:12"
+          },
+          {
+            "label": "pbbCounter",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint256",
+            "contract": "PBBImplementation",
+            "src": "contracts\\PBBLogic.sol:13"
+          }
+        ],
+        "types": {
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)86_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_contract(PBBFactory)970": {
             "label": "contract PBBFactory",
             "numberOfBytes": "20"
           },

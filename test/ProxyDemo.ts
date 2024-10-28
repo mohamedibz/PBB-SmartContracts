@@ -40,6 +40,7 @@ describe('Public Bulletin Board Contract Tests', function () {
   });
 
   it('Usuario autorizado puede agregar un mensaje', async function () {
+    
 
   });
 

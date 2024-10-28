@@ -10,7 +10,7 @@ contract PBBFactory {
     // Función para crear una nueva instancia de PublicBulletinBoard
     function createPBB(address owner, string memory name, address[] memory authUsers) external returns (address) {
         // Creamos una nueva instancia del contrato PublicBulletinBoard
-        PublicBulletinBoard newPBB = new PublicBulletinBoard(owner, name, authUsers);
+        PublicBulletinBoard newPBB = new PublicBulletinBoard(msg.sender, owner, name, authUsers);
 
         // Emitimos un evento que indica que se ha desplegado un nuevo PBB
         emit PBBDeployed(owner, address(newPBB));

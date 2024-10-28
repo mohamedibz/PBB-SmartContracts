@@ -22,8 +22,18 @@ const config: HardhatUserConfig = {
       url: process.env.BUILDBEAR_RPC_URL || "",
       accounts: process.env.PRIVATE_KEY2 ? [process.env.PRIVATE_KEY2] : [],
       chainId: 20939,  // Identificador de BUILDBEAR
+    },
+
+    alchemy: {
+      url: process.env.ALCHEMY_RPC_URL || "",
+      accounts: process.env.PRIVATE_KEY4 ? [process.env.PRIVATE_KEY4] : [],
+      chainId: 11155111,  // Identificador de BUILDBEAR
     }
-  }
+  },
+
+  etherscan: {
+    apiKey: "AAA6ZCJRDXRSW194X63MU53YPCXYERP5X5",
+  },
 };
 
 export default config;

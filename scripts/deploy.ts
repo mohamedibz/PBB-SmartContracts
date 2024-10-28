@@ -37,7 +37,7 @@ export async function deployProxy(impl: any, factory: any) {
 
 async function main() {
 
-  /*
+  
   // DESPLEGAR LA FABRICA
   const PBBFactory = await ethers.getContractFactory("PBBFactory");
   const factory = await PBBFactory.deploy();
@@ -64,9 +64,9 @@ async function main() {
 
   const proxy = await ethers.getContractAt('PBBImplementation', await prox.getAddress());
 
-
+  /*
   // CREAR UN NUEVO PBB
-  const table = await proxy.createPBB(1, 'Primera Tabla', [owner]);  // Creamos un Public Bulletin Board con ID 1
+  const table = await proxy.createPBB('Primera Tabla', [owner]);  // Creamos un Public Bulletin Board con ID 1
   await table.wait();
   console.log("PBB creado con ID 1");
 
@@ -90,8 +90,8 @@ async function main() {
   paginatedMessages.forEach((msg: any, index: number) => {
     console.log(`Mensaje ${index + 1}: ${msg.content}`);
   });
-
   */
+
 }
 
 
