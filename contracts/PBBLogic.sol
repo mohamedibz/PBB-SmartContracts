@@ -13,11 +13,10 @@ contract PBBImplementation is Initializable {
     uint256 pbbCounter;
 
     event PBBCreated(uint256 indexed pbbId, string name, address indexed creator, address pbbAddress, uint256 timestamp);
-    event MessageAdded(uint256 indexed pbbId, address indexed sender, string content, uint256 timestamp);
+    event MessageAdded(uint256 indexed pbbId, address indexed sender, string content, string topic, uint256 timestamp);
 
     event UserAuthorized(uint256 indexed pbbId, address indexed admin, address indexed newUser, uint256 timestamp);
     event UserRevoked(uint256 indexed pbbId, address indexed admin, address indexed user, uint256 timestamp);
-
 
     // Inicialización del contrato
     function initialize(address _factory) initializer public {
@@ -38,16 +37,16 @@ contract PBBImplementation is Initializable {
         pbbCounter++;
     }
 
-    // Agregar un mensaje a un PBB
-    function addMessageToPBB(uint256 pbbId, string calldata content) external {
+    // Agregar un mensaje con tema a un PBB
+    function addMessageToPBB(uint256 pbbId, string calldata content, string calldata topic) external {
         address pbbAddress = pbbContracts[pbbId];
         require(pbbAddress != address(0), "PBB no existe");
 
         PublicBulletinBoard pbb = PublicBulletinBoard(pbbAddress);
-        require(pbb.isAuthorized(msg.sender), "Usuario no autorizado");
+        require(pbb.isAuthorized(msg.sender), "usuario no autorizado");
         
-        pbb.addMessage(content);
-        emit MessageAdded(pbbId, msg.sender, content, block.timestamp);
+        pbb.addMessage(content, topic); // Ahora pasamos también el tema
+        emit MessageAdded(pbbId, msg.sender, content, topic, block.timestamp);
     }
 
     // Obtener un mensaje por ID de un PBB específico
@@ -87,5 +86,4 @@ contract PBBImplementation is Initializable {
         pbb.removeAuthorizedUser(user);
         emit UserRevoked(pbbId, msg.sender, user, block.timestamp);
     }
-
 }

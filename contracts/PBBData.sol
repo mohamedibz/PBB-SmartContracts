@@ -9,6 +9,7 @@ contract PublicBulletinBoard is Ownable {
         uint256 id;
         address sender;
         string content;
+        string topic; // Nuevo atributo para el tema del mensaje
         uint256 timestamp;
     }
 
@@ -38,11 +39,12 @@ contract PublicBulletinBoard is Ownable {
     }
 
     // Función para agregar un mensaje, solo usuarios autorizados pueden hacerlo
-    function addMessage(string calldata content) external onlyOwner {
+    function addMessage(string calldata content, string calldata topic) external onlyOwner {
         messages[nextMessageId] = Message({
             id: nextMessageId,
             sender: msg.sender,
             content: content,
+            topic: topic, // Agregar el tema al mensaje
             timestamp: block.timestamp
         });
 
@@ -78,5 +80,4 @@ contract PublicBulletinBoard is Ownable {
     function removeAuthorizedUser(address user) external onlyOwner {
         authorizedUsers[user] = false;
     }
-
 }
