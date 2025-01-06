@@ -2,35 +2,50 @@
   "manifestVersion": "3.2",
   "proxies": [
     {
-      "address": "0xEc6ef64366E6Ca367F60B6fF7726aC508C7a45CA",
-      "txHash": "0x6e5ad0cf49cbbbf96300442d660773572a98eef11f4208034de7e50c36ebc3a1",
-      "kind": "transparent"
+      "address": "0xEf4CD709c80Bafed6a97629f09ba1e93E4086B23",
+      "txHash": "0xff44866f0bd566deb19f9bfc351bc3c487b81cd3e4ba5a78d0331f284106abe9",
+      "kind": "uups"
     },
     {
-      "address": "0x101bD163EE6A0a642C5be743710B468E69F3D24a",
-      "txHash": "0x631df07f2de4df19fcd5cf47ce53b0d31699efd9535d6ef7ff52cbe009cfdfe5",
-      "kind": "transparent"
+      "address": "0xd417e2fe9a2628fDdc969196B6a6E074D4Cd0B6c",
+      "txHash": "0x80e75627efc8d58c28d8a079381fb89be8690c31c2064bd9c56db2bdfc7d3fa6",
+      "kind": "uups"
     },
     {
-      "address": "0xfcAa386192dC548e8397220A2bdd24B7BB5d1e1E",
-      "txHash": "0x46334dccb68d66a3af8316e9884f6a9eabae4cd06d1a957b5ed55151a3e3a75d",
-      "kind": "transparent"
+      "address": "0xb1c0F1D3c162aFFDeC341D619295cC15Cf9D9F21",
+      "txHash": "0xe29660d6c71526bfe88654acd9b638a7327ccb6da40fae3422f31b17786c8df1",
+      "kind": "uups"
     },
     {
-      "address": "0xA9e2385856F061A47C862355eE7ceFe95a46f939",
-      "txHash": "0x60963c243a799cf4cb8f11bec1c69c198bb81cc2a643cd4ba50afd4419a6e044",
-      "kind": "transparent"
+      "address": "0x5A078A92b8E957fa3BfeB33f743C111Ca5Ef46b6",
+      "txHash": "0xd3aac3844f119546364b97cfaec5fb9554a9967aa4b7ecd5b012b3957ca27569",
+      "kind": "uups"
     },
     {
-      "address": "0x19d1c33AEbdBCe70117F229991ec4C905De6E6F7",
-      "txHash": "0x422213f5a35a93327f77476c22bbf95745a654137a7cd4e0b6cdb5d04ea8a622",
-      "kind": "transparent"
+      "address": "0x0F8e94C0A7895f8A13C9A955518D57Eb59330013",
+      "txHash": "0x80210b8f4e2997d71f80e1fce71459d642b899358594b116a9e9264c5a2c7b3f",
+      "kind": "uups"
+    },
+    {
+      "address": "0xE0cF2FCDFF6854C836a5a134595Bd043Aabcce95",
+      "txHash": "0x95da64e616fdc5919e3c9f0e5d85b947904c363d9eb3138cc53c9b14646d4f2c",
+      "kind": "uups"
+    },
+    {
+      "address": "0x56d5B24Dbb230908586516e791E410c04Ef25023",
+      "txHash": "0xaa192f5917a61b32249e302c9fbed7486a1b95539e1426757c0ad9839fc24db6",
+      "kind": "uups"
+    },
+    {
+      "address": "0x53ceD0CE6F386DD6c00d82C6ea5cd1aD1C947544",
+      "txHash": "0x58fa7bf882c072f0f44d6abb6290ba664a65781e2cec020fa2937b215ec4bd95",
+      "kind": "uups"
     }
   ],
   "impls": {
-    "34b977203ad8f75f57f7093501eaa26db9ba0fd68bf77dc3d914e459a88be2b5": {
-      "address": "0x5AD50F1E6B8d2A5A123F0837105c1664847268BC",
-      "txHash": "0xe70599ffb154ed655cd8dae571acc26f4e6139ade570a63b3323c78216f1a648",
+    "4bc038076f48346eec0a0619b2b64aeec511bd78ba5aba109b9b958902de668c": {
+      "address": "0xd009f56f80e7484Bb2A6bE66677bb73A3d4988CC",
+      "txHash": "0xbce81d8255dca85b5112adbab2f85ffdede22acec5b2c068086bd6bdbf7caaf3",
       "layout": {
         "solcVersion": "0.8.27",
         "storage": [
@@ -38,9 +53,9 @@
             "label": "factory",
             "offset": 0,
             "slot": "0",
-            "type": "t_contract(PBBFactory)1329",
+            "type": "t_contract(PBBFactory)1600",
             "contract": "PBBImplementation",
-            "src": "contracts\\PBBLogic.sol:10"
+            "src": "contracts\\PBBImplementation.sol:9"
           },
           {
             "label": "pbbContracts",
@@ -48,7 +63,15 @@
             "slot": "1",
             "type": "t_mapping(t_uint256,t_address)",
             "contract": "PBBImplementation",
-            "src": "contracts\\PBBLogic.sol:11"
+            "src": "contracts\\PBBImplementation.sol:10"
+          },
+          {
+            "label": "pbbCounter",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint256",
+            "contract": "PBBImplementation",
+            "src": "contracts\\PBBImplementation.sol:11"
           }
         ],
         "types": {
@@ -82,7 +105,7 @@
             "label": "address",
             "numberOfBytes": "20"
           },
-          "t_contract(PBBFactory)1329": {
+          "t_contract(PBBFactory)1600": {
             "label": "contract PBBFactory",
             "numberOfBytes": "20"
           },
@@ -117,9 +140,9 @@
         }
       }
     },
-    "e0c92a8d487b1b880b277766cad2f00c331196330e84c90c85468c7b91f8f87b": {
-      "address": "0x06B868e586D6Bbc6343f0Bc0bb5d4F6fbBc9a2e3",
-      "txHash": "0xe0538e7f2c36a9a0934b5af3ee718147cb9a4ed19a4c7706ea1168a6c2530da9",
+    "c8a326c55d72b31c1931f48c2f2c01ba7aaeb872789afd53bca01ea38c87f792": {
+      "address": "0x3D5041C0e2fFC6088240Ed6BC1c5A7A388448562",
+      "txHash": "0x9be3e32b479cad358b4136b784ace6dd8ba810c9c0df574aa582728d0f66a80f",
       "layout": {
         "solcVersion": "0.8.27",
         "storage": [
@@ -127,9 +150,9 @@
             "label": "factory",
             "offset": 0,
             "slot": "0",
-            "type": "t_contract(PBBFactory)970",
+            "type": "t_contract(PBBFactory)1600",
             "contract": "PBBImplementation",
-            "src": "contracts\\PBBLogic.sol:11"
+            "src": "contracts\\PBBImplementation.sol:9"
           },
           {
             "label": "pbbContracts",
@@ -137,7 +160,7 @@
             "slot": "1",
             "type": "t_mapping(t_uint256,t_address)",
             "contract": "PBBImplementation",
-            "src": "contracts\\PBBLogic.sol:12"
+            "src": "contracts\\PBBImplementation.sol:10"
           },
           {
             "label": "pbbCounter",
@@ -145,7 +168,7 @@
             "slot": "2",
             "type": "t_uint256",
             "contract": "PBBImplementation",
-            "src": "contracts\\PBBLogic.sol:13"
+            "src": "contracts\\PBBImplementation.sol:11"
           }
         ],
         "types": {
@@ -153,7 +176,7 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_struct(InitializableStorage)86_storage": {
+          "t_struct(InitializableStorage)93_storage": {
             "label": "struct Initializable.InitializableStorage",
             "members": [
               {
@@ -179,7 +202,7 @@
             "label": "address",
             "numberOfBytes": "20"
           },
-          "t_contract(PBBFactory)970": {
+          "t_contract(PBBFactory)1600": {
             "label": "contract PBBFactory",
             "numberOfBytes": "20"
           },
@@ -214,9 +237,9 @@
         }
       }
     },
-    "8b4f95ecb0c948f1feb439043233c46520c8a186f608d7d32902e7154f9b253b": {
-      "address": "0xe144615b551EBc400B87Cb650A5b30967Cb64bA9",
-      "txHash": "0xe1f3b6f35410d3c385ee8527622d6172775cb8c4b483acd00216e215fabcea19",
+    "83dd45457206a6f16dd0f3a24777efb2384db9ba46170a1dcbff24cd576d304b": {
+      "address": "0x9c6578326509ebd4dAC96C5c6b8620e33c1504C2",
+      "txHash": "0xea0a9ec0e48198613a61c3095977455b8eccec03a0683e6dfd9e483338023c91",
       "layout": {
         "solcVersion": "0.8.27",
         "storage": [
@@ -224,9 +247,9 @@
             "label": "factory",
             "offset": 0,
             "slot": "0",
-            "type": "t_contract(PBBFactory)970",
+            "type": "t_contract(PBBFactory)1604",
             "contract": "PBBImplementation",
-            "src": "contracts\\PBBLogic.sol:11"
+            "src": "contracts\\PBBImplementation.sol:9"
           },
           {
             "label": "pbbContracts",
@@ -234,7 +257,7 @@
             "slot": "1",
             "type": "t_mapping(t_uint256,t_address)",
             "contract": "PBBImplementation",
-            "src": "contracts\\PBBLogic.sol:12"
+            "src": "contracts\\PBBImplementation.sol:10"
           },
           {
             "label": "pbbCounter",
@@ -242,7 +265,7 @@
             "slot": "2",
             "type": "t_uint256",
             "contract": "PBBImplementation",
-            "src": "contracts\\PBBLogic.sol:13"
+            "src": "contracts\\PBBImplementation.sol:11"
           }
         ],
         "types": {
@@ -276,7 +299,7 @@
             "label": "address",
             "numberOfBytes": "20"
           },
-          "t_contract(PBBFactory)970": {
+          "t_contract(PBBFactory)1604": {
             "label": "contract PBBFactory",
             "numberOfBytes": "20"
           },
@@ -311,9 +334,9 @@
         }
       }
     },
-    "fd677243bf6429a557e199cfca63e18078cddcaf43cc9d34ae52fc38c184a820": {
-      "address": "0x6201C0b0491929F1dAe8e3aAE011f4295BA0C8Bc",
-      "txHash": "0xf0b99a99f5f1a220efcfcfe91c9646f4d37f6700c11b1cc622d14b7e2f231510",
+    "4764b30185f2890ba385819aaea28da29796d0288ac3ab64436355f9f309840f": {
+      "address": "0x7Eed984a62FFD858454016bfA0f3521A8Fde648C",
+      "txHash": "0xa10639ec1890eac279093e9dea33ebff2874a9e712f1ad1f191b7bc369daa3b9",
       "layout": {
         "solcVersion": "0.8.27",
         "storage": [
@@ -321,9 +344,9 @@
             "label": "factory",
             "offset": 0,
             "slot": "0",
-            "type": "t_contract(PBBFactory)975",
+            "type": "t_contract(PBBFactory)1600",
             "contract": "PBBImplementation",
-            "src": "contracts\\PBBLogic.sol:11"
+            "src": "contracts\\PBBImplementation.sol:9"
           },
           {
             "label": "pbbContracts",
@@ -331,7 +354,7 @@
             "slot": "1",
             "type": "t_mapping(t_uint256,t_address)",
             "contract": "PBBImplementation",
-            "src": "contracts\\PBBLogic.sol:12"
+            "src": "contracts\\PBBImplementation.sol:10"
           },
           {
             "label": "pbbCounter",
@@ -339,7 +362,7 @@
             "slot": "2",
             "type": "t_uint256",
             "contract": "PBBImplementation",
-            "src": "contracts\\PBBLogic.sol:13"
+            "src": "contracts\\PBBImplementation.sol:11"
           }
         ],
         "types": {
@@ -373,7 +396,201 @@
             "label": "address",
             "numberOfBytes": "20"
           },
-          "t_contract(PBBFactory)975": {
+          "t_contract(PBBFactory)1600": {
+            "label": "contract PBBFactory",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "8320067feeb1abe1d99f26a6d0e07b384d4edc89e5f41afc0e9c6a96a0fb9816": {
+      "address": "0x51Ab0F9991E2441a7C22814a2f92B3d568E863AF",
+      "txHash": "0x57558e3ad83d406c0d1a9f0e8afe59bcbca9ae368687309ee696e05aa6212bbc",
+      "layout": {
+        "solcVersion": "0.8.27",
+        "storage": [
+          {
+            "label": "factory",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(PBBFactory)1623",
+            "contract": "PBBImplementation",
+            "src": "contracts\\PBBImplementation.sol:14"
+          },
+          {
+            "label": "pbbContracts",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_uint256,t_address)",
+            "contract": "PBBImplementation",
+            "src": "contracts\\PBBImplementation.sol:15"
+          },
+          {
+            "label": "pbbCounter",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint256",
+            "contract": "PBBImplementation",
+            "src": "contracts\\PBBImplementation.sol:16"
+          }
+        ],
+        "types": {
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)93_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_contract(PBBFactory)1623": {
+            "label": "contract PBBFactory",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "d49ae064878863619efd8b9786b2364f282671171581bb87bb83e3f761b4a9ee": {
+      "address": "0x18F969DD92Ae27247af97544600B66b3151b0967",
+      "txHash": "0xde49dc11ae78ebabd417185fc8792a3785d2121194b708e2f08bf1199ee786dc",
+      "layout": {
+        "solcVersion": "0.8.27",
+        "storage": [
+          {
+            "label": "factory",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(PBBFactory)1788",
+            "contract": "PBBImplementation",
+            "src": "contracts\\PBBImplementation.sol:15"
+          },
+          {
+            "label": "pbbContracts",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_uint256,t_address)",
+            "contract": "PBBImplementation",
+            "src": "contracts\\PBBImplementation.sol:16"
+          },
+          {
+            "label": "pbbCounter",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint256",
+            "contract": "PBBImplementation",
+            "src": "contracts\\PBBImplementation.sol:17"
+          }
+        ],
+        "types": {
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)93_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_contract(PBBFactory)1788": {
             "label": "contract PBBFactory",
             "numberOfBytes": "20"
           },
