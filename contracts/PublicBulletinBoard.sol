@@ -3,13 +3,14 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /**
  * @title Public Bulletin Board (PBB)
  * @notice Este contrato permite la creación de tablones públicos donde los usuarios autorizados pueden publicar mensajes.
  * @dev Utiliza el patrón proxy para actualizaciones y permite la gestión de permisos de usuarios.
  */
-contract PublicBulletinBoard is Initializable, OwnableUpgradeable {
+contract PublicBulletinBoard is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     
     /**
      * @notice Estructura para representar un mensaje en el tablón.
@@ -48,6 +49,16 @@ contract PublicBulletinBoard is Initializable, OwnableUpgradeable {
         for (uint256 i = 0; i < _authUsers.length; i++) {
             authorizedUsers[_authUsers[i]] = true;
         }
+    }
+
+    /**
+     * @notice Autoriza la actualización del contrato.
+     * @dev Función requerida por el patrón UUPS.
+     * @param newImplementation Dirección de la nueva implementación.
+     */
+    function _authorizeUpgrade(address newImplementation) internal virtual override {
+        require(newImplementation != address(0), "Invalid implementation address");
+        require(owner() == msg.sender, "Not authorized to upgrade");
     }
 
     /**

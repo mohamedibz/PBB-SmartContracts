@@ -3,15 +3,20 @@ pragma solidity ^0.8.0;
 
 import "./PBBFactory.sol";
 import "./PublicBulletinBoard.sol";
+import "./PublicBulletinBoardV2.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+
 
 /**
  * @title PBB Implementation
  * @notice Este contrato gestiona la interacción y administración de múltiples Public Bulletin Boards (PBBs).
  * @dev Utiliza el patrón UUPS para actualizaciones y permite la creación y gestión de contratos PBB.
  */
-contract PBBImplementation is UUPSUpgradeable {
+contract PBBImplementation is UUPSUpgradeable, AccessControlUpgradeable, ReentrancyGuardUpgradeable {
 
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     PBBFactory public factory; // Dirección del contrato Factory utilizado para crear PBBs.
     mapping(uint256 => address) public pbbContracts; // Mapeo de IDs de PBB a sus direcciones.
     uint256 public pbbCounter; // Contador para asignar IDs únicos a los PBBs creados.
@@ -26,7 +31,6 @@ contract PBBImplementation is UUPSUpgradeable {
      * @param timestamp Marca de tiempo del momento de creación.
      */
     event PBBCreated(uint256 indexed pbbId, string name, address indexed creator, address pbbAddress, uint256 timestamp);
-
     /**
      * @notice Emitido cuando se agrega un mensaje a un PBB.
      * @param pbbId ID del PBB al que se agregó el mensaje.
@@ -36,7 +40,6 @@ contract PBBImplementation is UUPSUpgradeable {
      * @param timestamp Marca de tiempo del momento en que se agregó el mensaje.
      */
     event MessageAdded(uint256 indexed pbbId, address indexed sender, string content, string topic, uint256 timestamp);
-
     /**
      * @notice Emitido cuando un usuario es autorizado en un PBB.
      * @param pbbId ID del PBB.
@@ -45,7 +48,6 @@ contract PBBImplementation is UUPSUpgradeable {
      * @param timestamp Marca de tiempo del momento de autorización.
      */
     event UserAuthorized(uint256 indexed pbbId, address indexed admin, address indexed newUser, uint256 timestamp);
-
     /**
      * @notice Emitido cuando un usuario es revocado de un PBB.
      * @param pbbId ID del PBB.
@@ -54,7 +56,6 @@ contract PBBImplementation is UUPSUpgradeable {
      * @param timestamp Marca de tiempo del momento de revocación.
      */
     event UserRevoked(uint256 indexed pbbId, address indexed admin, address indexed user, uint256 timestamp);
-
     /**
      * @notice Emitido cuando se transfiere el rol de administrador en un PBB.
      * @param pbbId ID del PBB.
@@ -75,6 +76,8 @@ contract PBBImplementation is UUPSUpgradeable {
      * @param _factory Dirección del contrato Factory utilizado para crear PBBs.
      */
     function initialize(address _factory) external {
+        _grantRole(ADMIN_ROLE, msg.sender);
+        
         factory = PBBFactory(_factory);
         pbbCounter = 1;
     }
@@ -92,6 +95,7 @@ contract PBBImplementation is UUPSUpgradeable {
         emit PBBCreated(pbbCounter, name, msg.sender, pbbAddress, block.timestamp);
 
         for (uint256 i = 0; i < authUsers.length; i++) {
+            require(authUsers[i] != address(0), "Invalid user address");
             emit UserAuthorized(pbbCounter, msg.sender, authUsers[i], block.timestamp);
         }
 
@@ -104,7 +108,7 @@ contract PBBImplementation is UUPSUpgradeable {
      * @param content Contenido del mensaje.
      * @param topic Tema del mensaje.
      */
-    function addMessageToPBB(uint256 pbbId, string calldata content, string calldata topic) external pbbExists(pbbId) {
+    function addMessageToPBB(uint256 pbbId, string calldata content, string calldata topic) external pbbExists(pbbId) nonReentrant {
         address pbbAddress = pbbContracts[pbbId];
         uint256 version = PublicBulletinBoard(pbbAddress).version();
 
@@ -119,6 +123,33 @@ contract PBBImplementation is UUPSUpgradeable {
         }
 
         emit MessageAdded(pbbId, msg.sender, content, topic, block.timestamp);
+    }
+
+    function getDescriptionFromPBB(uint256 pbbId) public view returns (string memory) {
+        address pbbAddress = pbbContracts[pbbId];
+        uint256 version = PublicBulletinBoardV2(pbbAddress).version();
+
+        if (version == 2) {
+            
+            PublicBulletinBoardV2 pbb = PublicBulletinBoardV2(pbbAddress);
+            return pbb.description();
+        } else {
+            revert("Version no soportada");
+        }
+    }
+
+
+    function updateDescriptionToPBB(uint256 pbbId, string calldata content) public {
+        address pbbAddress = pbbContracts[pbbId];
+        uint256 version = PublicBulletinBoardV2(pbbAddress).version();
+
+        if (version == 2) {
+            
+            PublicBulletinBoardV2 pbb = PublicBulletinBoardV2(pbbAddress);
+            return pbb.updateDescription(content);
+        } else {
+            revert("Version no soportada");
+        }
     }
 
     /**
@@ -152,7 +183,10 @@ contract PBBImplementation is UUPSUpgradeable {
     function authorizeUser(uint256 pbbId, address user) external pbbExists(pbbId) {
         address pbbAddress = pbbContracts[pbbId];
         PublicBulletinBoard pbb = PublicBulletinBoard(pbbAddress);
+
+        require(user != address(0), "Invalid user address");
         require(pbb.isAdmin(msg.sender), "Usuario no es administrador");
+
         pbb.addAuthorizedUser(user);
         emit UserAuthorized(pbbId, msg.sender, user, block.timestamp);
     }
@@ -165,7 +199,10 @@ contract PBBImplementation is UUPSUpgradeable {
     function revokeUser(uint256 pbbId, address user) external pbbExists(pbbId) {
         address pbbAddress = pbbContracts[pbbId];
         PublicBulletinBoard pbb = PublicBulletinBoard(pbbAddress);
+
+        require(user != address(0), "Invalid user address");
         require(pbb.isAdmin(msg.sender), "Usuario no es administrador");
+
         pbb.removeAuthorizedUser(user);
         emit UserRevoked(pbbId, msg.sender, user, block.timestamp);
     }
@@ -178,6 +215,7 @@ contract PBBImplementation is UUPSUpgradeable {
     function transferAdminOfPBB(uint256 pbbId, address newAdmin) external pbbExists(pbbId) {
         address pbbAddress = pbbContracts[pbbId];
         PublicBulletinBoard pbb = PublicBulletinBoard(pbbAddress);
+
         require(pbb.isAdmin(msg.sender), "Usuario no es administrador");
         require(newAdmin != address(0), "Nueva direccion no puede ser la direccion cero");
 
@@ -190,5 +228,32 @@ contract PBBImplementation is UUPSUpgradeable {
      * @dev Función requerida por el patrón UUPS.
      * @param newImplementation Dirección de la nueva implementación.
      */
-    function _authorizeUpgrade(address newImplementation) internal virtual override {}
+    function _authorizeUpgrade(address newImplementation) internal virtual override {
+        require(hasRole(ADMIN_ROLE, msg.sender), "No tienes permisos");
+        require(newImplementation != address(0), "Invalid implementation address");
+    }
+
+    /**
+     * @notice Actualiza la implementación de un PBB específico.
+     * @dev Utiliza la función `upgradeToAndCall` del proxy UUPS.
+     * @param pbbId ID del PBB a actualizar.
+     * @param newImplementation Dirección de la nueva implementación.
+     * @param data Datos opcionales para llamar a una función en la nueva implementación después de la actualización.
+     */
+    function upgradePBBImplementation(uint256 pbbId, address newImplementation, bytes memory data) external pbbExists(pbbId) {
+        // Obtiene la dirección del proxy del PBB
+        address pbbAddress = pbbContracts[pbbId];
+
+        // Valida la nueva implementación
+        require(newImplementation != address(0), "La nueva implementacion no puede ser la direccion cero");
+
+        // Llama a la función `upgradeToAndCall` en el proxy para realizar la actualización
+        (bool success, ) = pbbAddress.call(
+            abi.encodeWithSignature("upgradeToAndCall(address,bytes)", newImplementation, data)
+        );
+
+        // Verifica si la actualización fue exitosa
+        require(success, "Fallo al actualizar la implementacion del PBB");
+    }
+
 }

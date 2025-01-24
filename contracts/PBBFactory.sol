@@ -1,8 +1,11 @@
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import "./PublicBulletinBoard.sol";
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /**
  * @title PBB Factory
@@ -60,18 +63,27 @@ contract PBBFactory is Ownable {
      */
     function createPBB(uint256 version, address admin, string calldata name, address[] calldata authUsers) external returns (address) {
         address implementation = implementations[version];
+
+        require(authUsers.length > 0, "Must provide at least one authorized user"); 
         require(implementation != address(0), "Implementation not found for version");
         require(bytes(name).length > 0, "Name cannot be empty");
 
-        // Crear un clon utilizando la librería Clones de OpenZeppelin
-        address clone = Clones.clone(implementation);
+        // Codifica los datos de inicialización para la función `initialize`
+        bytes memory initData = abi.encodeWithSelector(
+            bytes4(keccak256("initialize(string,address,address,address[])")),
+            name,
+            admin,
+            msg.sender,
+            authUsers
+        );
 
-        // Inicializar el contrato clon con los datos necesarios
-        (bool success, ) = clone.call(abi.encodeWithSignature("initialize(string,address,address,address[])", name, admin, msg.sender, authUsers));
-        require(success, "Initialization failed");
+        // Despliega un nuevo proxy ERC-1967 con la implementación seleccionada
+        ERC1967Proxy proxy = new ERC1967Proxy(implementation, initData);
 
-        emit PBBCreated(msg.sender, clone, version, name);
+        // Emitir evento para registrar el despliegue
+        emit PBBCreated(msg.sender, address(proxy), version, name);
 
-        return clone;
+        return address(proxy);
+
     }
 }
