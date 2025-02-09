@@ -1,165 +1,248 @@
-import { expect } from "chai";
-import { ethers, upgrades } from "hardhat";
+const { expect } = require("chai");
+const { ethers, upgrades } = require("hardhat");
+import { PublicBulletinBoard, PublicBulletinBoardV2 } from "../typechain-types";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
-import {
-  deployFactory,
-  deployBaseImplementation,
-  registerImplementation,
-  deployMainImplementation,
-  deployProxy,
-} from "../scripts/deployFunctions";
 
-describe("Public Bulletin Board Comprehensive Tests", function () {
-  let owner: any;
-  let admin: any;
-  let accounts: any[];
-  let factory: any;
-  let pbbBase: any;
-  let mainImplementation: any;
-  let proxy: any;
+describe("PublicBulletinBoard - Pruebas Integrales", function () {
+  let pbb: PublicBulletinBoard;
+  let deployer: any, admin: any, user1: any, user2: any, user3: any;
 
-  before(async function () {
-    // Obtener las cuentas
-    [owner, admin, ...accounts] = await ethers.getSigners();
+  beforeEach(async function () {
+    [deployer, admin, user1, user2, user3] = await ethers.getSigners();
 
-    // Desplegar la fábrica
-    factory = await deployFactory();
-
-    // Desplegar la implementación base para PBB
-    pbbBase = await deployBaseImplementation();
-
-    // Registrar la implementación base en la fábrica
-    await registerImplementation(factory, 1, await pbbBase.getAddress());
-
-    // Desplegar la implementación principal de PBB
-    const [_, implFactory] = await deployMainImplementation()
-
-    // Desplegar el proxy UUPS
-    proxy = await deployProxy(await factory.getAddress(), implFactory);
-
-    console.log("Setup completo.");
+    // Desplegamos el contrato proxy pasando "admin" como dueño y [user1] como usuario autorizado inicial.
+    const pbbImpl = await ethers.getContractFactory("PublicBulletinBoard");
+    pbb = (await upgrades.deployProxy(
+      pbbImpl,
+      ["My PBB", admin.address, [user1.address]],
+      { initializer: "initialize" }
+    )) as unknown as PublicBulletinBoard;
+    await pbb.waitForDeployment();
   });
 
-  it("Admin can create a PBB successfully", async function () {
-    const tx = await proxy.createPBB(1, "Test Board", [accounts[0].address]);
-    await expect(tx)
-      .to.emit(proxy, "PBBCreated")
-      .withArgs(1, "Test Board", owner.address, anyValue, anyValue);
-  });
-  
-  it("Authorized user can add a message to the PBB", async function () {
-    await proxy.createPBB(1, "Authorized Test", [accounts[0].address]);
+  describe("Inicialización", function () {
+    it("Debe inicializar con el nombre, versión y usuarios autorizados correctos", async function () {
+      expect(await pbb.name()).to.equal("My PBB");
+      expect(await pbb.version()).to.equal(1);
+      expect(await pbb.authorizedUsers(user1.address)).to.equal(true);
+      expect(await pbb.authorizedUsers(user2.address)).to.equal(false);
+    });
 
-    await expect(proxy.connect(accounts[0]).addMessageToPBB(2, "Hello, World!", "General"))
-      .to.emit(proxy, "MessageAdded")
-      .withArgs(2, accounts[0].address, "Hello, World!", "General", anyValue);
-  });
-
-  it("Unauthorized user cannot add messages", async function () {
-    await proxy.createPBB(1, "Unauthorized Test", [accounts[0].address]);
-
-    await expect(proxy.connect(accounts[1]).addMessageToPBB(3, "Not Allowed!", "Error"))
-      .to.be.revertedWith("usuario no autorizado");
+    it("No debe permitir re-inicialización", async function () {
+      // Intentamos desplegar otro proxy utilizando el mismo contrato lógico con `initialize`.
+      await expect(
+      pbb.initialize("New PBB", admin.address, [])
+      ).to.be.reverted;
+    });
   });
 
-  it("Admin can authorize and revoke users", async function () {
-    await proxy.createPBB(1, "Manage Users Test", [accounts[5]]);
+  describe("Gestión de Mensajes", function () {
+    it("Debe agregar un mensaje correctamente e incrementar el nextMessageId", async function () {
+      await pbb.connect(user1).addMessage("Hello World", "General");
+      const message = await pbb.getMessageById(1);
+      expect(message.id).to.equal(1);
+      expect(message.sender).to.equal(user1.address);
+      expect(message.timestamp).to.gt(0);
+      const nextId = await pbb.nextMessageId();
+      expect(nextId).to.equal(2);
+    });
 
-    // Authorize a user
-    await proxy.connect(owner).authorizeUser(4, accounts[0]);
-    await expect(proxy.connect(accounts[0]).addMessageToPBB(4, "Hello, World!", "General"))
-    .to.emit(proxy, "MessageAdded")
-    .withArgs(4, accounts[0].address, "Hello, World!", "General", anyValue);
+    it("Debe revertir si el contenido del mensaje excede 32 bytes", async function () {
+      // Se crea un string de 33 caracteres (más de 32 bytes)
+      const longStr = "123456789012345678901234567890123";
+      await expect(
+        pbb.connect(user1).addMessage(longStr, "General")
+      ).to.be.revertedWith("String demasiado largo");
+    });
 
-    // Revoke the user
-    await proxy.connect(owner).revokeUser(4, accounts[0].address);
-    await expect(proxy.connect(accounts[0]).addMessageToPBB(4, "Not Allowed!", "Error"))
-    .to.be.revertedWith("usuario no autorizado");
+    it("Debe aceptar un mensaje con el maximo numero de bytes (31)", async function () {
+      // 32 caracteres ASCII equivalen a 32 bytes
+      const longMessage = "a".repeat(31);
+      await pbb.connect(user1).addMessage(longMessage, "General");
+      const message = await pbb.getMessageById(1);
+      // Comparamos usando ethers.utils.formatBytes32String; se puede recortar el padding
+      expect(message.content).to.equal(ethers.encodeBytes32String(longMessage));
+    });
+
+
+    it("Debe revertir al solicitar un mensaje con ID inválido", async function () {
+      await expect(pbb.getMessageById(0)).to.be.revertedWith("ID de mensaje no valido");
+      await pbb.connect(user1).addMessage("Test", "General");
+      const nextId = await pbb.nextMessageId();
+      await expect(pbb.getMessageById(nextId)).to.be.revertedWith("ID de mensaje no valido");
+    });
   });
 
-  it("Admin can transfer ownership of the PBB", async function () {
-    await proxy.createPBB(1, "Transfer Ownership Test", [owner]);
+  describe("Gestión de Usuarios Autorizados", function () {
+    it("Solo el owner debe poder añadir usuarios autorizados", async function () {
+      // user1 no es owner, debe fallar al intentar autorizar a user2
+      await expect(
+        pbb.connect(user1).addAuthorizedUser(user2.address)
+      ).to.be.reverted;
+      // El owner (admin) autoriza a user2
+      await expect(pbb.connect(admin).addAuthorizedUser(user2.address))
+        .to.emit(pbb, "UserAuthorized")
+        .withArgs(admin.address, user2.address, anyValue);
+      expect(await pbb.authorizedUsers(user2.address)).to.equal(true);
+    });
 
-    await proxy.connect(owner).authorizeUser(5, accounts[6])
-    await expect(proxy.connect(accounts[6]).addMessageToPBB(5, "Hello, World!", "General")).to.emit(proxy, "MessageAdded")
+    it("Solo el owner debe poder revocar usuarios autorizados", async function () {
+      // El owner revoca a user1, quien ya estaba autorizado
+      await expect(pbb.connect(admin).removeAuthorizedUser(user1.address))
+        .to.emit(pbb, "UserRevoked")
+        .withArgs(admin.address, user1.address, anyValue);
+      expect(await pbb.authorizedUsers(user1.address)).to.equal(false);
+      // Un usuario no owner no puede revocar autorizaciones
+      await expect(pbb.connect(user1).removeAuthorizedUser(user2.address)).to.be.reverted;
+    });
 
-    await proxy.connect(owner).transferAdminOfPBB(5, accounts[0]);
-    
-    await proxy.connect(accounts[0]).authorizeUser(5, accounts[6])
-    await expect(proxy.connect(accounts[6]).addMessageToPBB(5, "Hello, World!", "General")).to.emit(proxy, "MessageAdded")
+    it("Debe manejar correctamente la adición de un usuario ya autorizado", async function () {
+      // user1 ya está autorizado; la operación debería completarse sin efectos colaterales.
+      await expect(pbb.connect(admin).addAuthorizedUser(user1.address))
+        .to.emit(pbb, "UserAuthorized")
+        .withArgs(admin.address, user1.address, anyValue);
+      expect(await pbb.authorizedUsers(user1.address)).to.equal(true);
+    });
 
-    //expect(await proxy.isAdmin(accounts[0].address)).to.be.true;
+    it("Debe manejar la revocación de un usuario no autorizado", async function () {
+      // user2 no está autorizado; la operación se ejecuta y el estado permanece en false.
+      await expect(pbb.connect(admin).removeAuthorizedUser(user2.address))
+        .to.emit(pbb, "UserRevoked")
+        .withArgs(admin.address, user2.address, anyValue);
+      expect(await pbb.authorizedUsers(user2.address)).to.equal(false);
+    });
   });
 
-  it("Proxy upgrade maintains state and functionality", async function () {
-    // Deploy new implementation
-    const NewImplementation = await ethers.getContractFactory("PBBImplementationV2");
-    const newImpl = await NewImplementation.deploy();
-    await newImpl.waitForDeployment();
+  describe("Transferencia de Administración", function () {
+    it("Solo el owner debe poder transferir la administración", async function () {
+      await expect(
+        pbb.connect(user1).transferAdmin(user2.address)
+      ).to.be.reverted;
+    });
 
-    // Upgrade proxy
-    await upgrades.upgradeProxy(proxy, NewImplementation);
+    it("Debe revertir si se intenta transferir a la dirección cero", async function () {
+      await expect(
+        pbb.connect(admin).transferAdmin(ethers.ZeroAddress)
+      ).to.be.revertedWith("Direccion no puede ser la direccion cero");
+    });
 
-    // Create a new instance of the upgraded proxy
-    const upgradedProxy = await ethers.getContractAt("PBBImplementationV2", proxy);
-
-    // Ensure the old state persists
-    const oldState = await upgradedProxy.pbbCounter();
-    expect(oldState).to.equal(6);
-
-    // Use new functionality
-    const result = await upgradedProxy.newFunctionality();
-    expect(result).to.equal("Nueva funcionalidad activa");
+    it("Debe transferir correctamente la administración y actualizar los privilegios", async function () {
+      // Transfiere la administración de admin a user2
+      await expect(pbb.connect(admin).transferAdmin(user2.address))
+        .to.emit(pbb, "AdminTransferred")
+        .withArgs(admin.address, user2.address, anyValue);
+      
+      // Verifica que user2 ahora es owner (puede llamar a funciones restringidas)
+      await expect(pbb.connect(user2).addAuthorizedUser(user3.address))
+        .to.emit(pbb, "UserAuthorized");
+      
+      // El antiguo owner ya no posee privilegios owner
+      await expect(
+        pbb.connect(admin).addAuthorizedUser(user3.address)
+      ).to.be.reverted;
+    });
   });
 
-  it("PBB prevents invalid actions and handles errors", async function () {
+  describe("Actualización (UUPS Upgrade)", function () {
+    let pbbV2Factory: any;
 
-    await expect(proxy.createPBB(1, "Tabla", ['0x0000000000000000000000000000000000000000'])).to.be.revertedWith("Invalid user address");
-    await expect(proxy.createPBB(1, "Tabla", [])).to.be.revertedWith("Must provide at least one authorized user");
-    await expect(proxy.createPBB(3, "Tabla", [accounts[0]])).to.be.revertedWith("Implementation not found for version");
-    await expect(proxy.createPBB(1, "", [accounts[0]])).to.be.revertedWith("Name cannot be empty");
+    beforeEach(async function () {
+      pbbV2Factory = await ethers.getContractFactory("PublicBulletinBoardV2");
+    });
+
+    it("Solo el owner debe poder autorizar una actualización", async function () {
+      // Un intento de upgrade desde un usuario que no es owner debe fallar.
+      await expect(
+        upgrades.upgradeProxy(pbb, pbbV2Factory.connect(user1))
+      ).to.be.reverted;
+    });
+
+    it("Debe actualizar y mantener el estado del contrato", async function () {
+      // Se agrega un mensaje y se autoriza un usuario para crear estado.
+      await pbb.connect(user1).addMessage("Upgrade Test", "General");
+      await pbb.connect(admin).addAuthorizedUser(user2.address);
+
+      // Se realiza la actualización usando la cuenta owner (admin).
+      const upgraded = (await upgrades.upgradeProxy(
+        pbb,
+        pbbV2Factory.connect(admin)
+      )) as unknown as PublicBulletinBoardV2;
+
+      // Verificamos que el mensaje y la autorización se mantienen.
+      const message = await upgraded.getMessageById(1);
+      expect(message.content).to.equal(ethers.encodeBytes32String("Upgrade Test"));
+      expect(await upgraded.authorizedUsers(user2.address)).to.equal(true);
+      // La función version ahora debe retornar 2.
+      expect(await upgraded.version()).to.equal(2);
+    });
+
+    // Nota: La verificación de que se rechace pasar la dirección cero en _authorizeUpgrade
+    // se realiza internamente mediante el modificador "notZeroAddress" y no es invocable directamente
+    // en un test ya que la función es interna.
   });
 
-  it("Ensures events are emitted for all critical actions", async function () {
-    await expect(proxy.createPBB(1, "Event Test", [accounts[0].address])).to.emit(proxy, "PBBCreated");
+  describe("Emisión de Eventos", function () {
+    it("Debe emitir MessageAdded al agregar un mensaje", async function () {
+      await expect(pbb.connect(user1).addMessage("Event Test", "General"))
+        .to.emit(pbb, "MessageAdded")
+        .withArgs(user1.address, "Event Test", "General", anyValue);
+    });
+
+    it("Debe emitir UserAuthorized al autorizar a un usuario", async function () {
+      await expect(pbb.connect(admin).addAuthorizedUser(user2.address))
+        .to.emit(pbb, "UserAuthorized")
+        .withArgs(admin.address, user2.address, anyValue);
+    });
+
+    it("Debe emitir UserRevoked al revocar la autorización de un usuario", async function () {
+      await expect(pbb.connect(admin).removeAuthorizedUser(user1.address))
+        .to.emit(pbb, "UserRevoked")
+        .withArgs(admin.address, user1.address, anyValue);
+    });
+
+    it("Debe emitir AdminTransferred al transferir la administración", async function () {
+      await expect(pbb.connect(admin).transferAdmin(user2.address))
+        .to.emit(pbb, "AdminTransferred")
+        .withArgs(admin.address, user2.address, anyValue);
+    });
   });
 
-  it("Admin can upgrade a PBB implementation and maintain state", async function () {
+  describe("Secuencia de Operaciones Complejas", function () {
+    it("Debe ejecutar una serie de operaciones y mantener un estado coherente", async function () {
+      // El owner autoriza a user2 y user3.
+      await pbb.connect(admin).addAuthorizedUser(user2.address);
+      await pbb.connect(admin).addAuthorizedUser(user3.address);
 
-    // Desplegar una nueva implementación de PublicBulletinBoard
-    const NewPBBImplementation = await ethers.getContractFactory("PublicBulletinBoardV2");
-    const newPBBImpl = await NewPBBImplementation.deploy();
-    await newPBBImpl.waitForDeployment();
+      // Cada usuario autorizado agrega un mensaje.
+      await pbb.connect(user1).addMessage("Msg from user1", "Topic1");
+      await pbb.connect(user2).addMessage("Msg from user2", "Topic2");
+      await pbb.connect(user3).addMessage("Msg from user3", "Topic3");
 
-    // Crear un nuevo PBB
-    const tx = await proxy.createPBB(1, "Upgradeable Board", [accounts[0]]);
-    const receipt = await tx.wait();
+      // Se transfiere la administración de admin a user1.
+      await pbb.connect(admin).transferAdmin(user1.address);
 
-    // Interactuar con el PBB antes de actualizar
-    await proxy.connect(accounts[0]).addMessageToPBB(6, "Pre-upgrade message", "General");
+      // El nuevo owner (user1) revoca la autorización a user2.
+      await pbb.connect(user1).removeAuthorizedUser(user2.address);
 
-    const preUpgradeMessage = await proxy.getMessageFromPBB(6, 1);
-    expect(preUpgradeMessage.content).to.equal(ethers.encodeBytes32String("Pre-upgrade message"));
+      // user2 ya no está autorizado y la acción debe revertir.
+      await expect(
+        pbb.connect(user2).addMessage("Otro mensaje", "Topic2")
+      ).to.be.revertedWith("No estas autorizado para realizar esta accion");
 
-    // Actualizar la implementación del PBB
-    await proxy.upgradePBBImplementation(6, await newPBBImpl.getAddress(), '0x');
+      // Verificar que los mensajes anteriores se mantienen.
+      const msg1 = await pbb.getMessageById(1);
+      const msg2 = await pbb.getMessageById(2);
+      const msg3 = await pbb.getMessageById(3);
+      expect(msg1.sender).to.equal(user1.address);
+      expect(msg2.sender).to.equal(user2.address);
+      expect(msg3.sender).to.equal(user3.address);
+    });
+  });
 
-    // Verificar que la implementación ha cambiado y que se puede interactuar con nuevas funcionalidades
-
-    // Verificar el estado previo
-    const messageAfterUpgrade = await proxy.getMessageFromPBB(6, 1);
-    expect(messageAfterUpgrade.content).to.equal(ethers.encodeBytes32String("Pre-upgrade message"));
-
-    // Usar la nueva funcionalidad de la versión actualizada
-    await proxy.updateDescriptionToPBB(6, 'Hola Mundo')
-    const description = await proxy.getDescriptionFromPBB(6);
-    expect(description).to.equal("Hola Mundo");
-
-    // Verificar que el estado posterior es coherente
-    await proxy.connect(accounts[0]).addMessageToPBB(6, "Post-upgrade message", "Update Test");
-    const postUpgradeMessage = await proxy.getMessageFromPBB(6, 2);
-    expect(postUpgradeMessage.content).to.equal(ethers.encodeBytes32String("Post-upgrade message"));
-
+  describe("Función Version", function () {
+    it("Debe retornar la versión correcta", async function () {
+      expect(await pbb.version()).to.equal(1);
+    });
   });
 
 });

@@ -1,89 +1,78 @@
-import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import "./PublicBulletinBoard.sol";
-
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol"; // Para restringir ciertas funciones al dueño del contrato
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol"; // Para crear proxies UUPS
+import "./PublicBulletinBoard.sol"; // La implementación del PBB
 
-/**
- * @title PBB Factory
- * @notice Este contrato actúa como una fábrica para crear y gestionar implementaciones de Public Bulletin Boards (PBBs).
- * @dev Utiliza el patrón Clones de OpenZeppelin para crear clones eficientes de contratos base.
- */
 contract PBBFactory is Ownable {
 
-    // Mapeo de versiones a direcciones de implementaciones base
+    // Almacena las direcciones de las implementaciones por versión
     mapping(uint256 => address) public implementations;
 
-    // Eventos
-    /**
-     * @notice Emitido cuando se crea un nuevo PBB.
-     * @param creator Dirección que solicitó la creación del PBB.
-     * @param pbbAddress Dirección del contrato PBB creado.
-     * @param version Versión del contrato base utilizado para el PBB.
-     * @param name Nombre del PBB.
-     */
-    event PBBCreated(address indexed creator, address indexed pbbAddress, uint256 version, string name);
+    // Almacena las direcciones de todos los PBBs creados y su cantidad
+    mapping(uint256 => address) public pbbAddresses;
+    uint256 public pbbCount;  // Contador para llevar el registro del número de PBBs creados
 
-    /**
-     * @notice Emitido cuando se registra una nueva implementación base.
-     * @param version Versión asignada a la implementación.
-     * @param implementation Dirección del contrato base registrado.
-     */
+    // Evento para notificar al frontend cuando se crea un nuevo PBB
+    event PBBCreated(address indexed creator, address indexed pbbAddress, uint256 version, string name);
+    
     event ImplementationAdded(uint256 version, address implementation);
 
-    /**
-     * @notice Constructor del contrato. Establece al creador como propietario inicial.
-     */
-    constructor() Ownable(msg.sender) {}
+    modifier notZeroAddress(address _addr) {
+        require(_addr != address(0), "Direccion no puede ser la direccion cero");
+        _;
+    }
 
+    constructor() Ownable(msg.sender) {}
+ 
     /**
-     * @notice Registra una nueva implementación base para PBBs.
+     * @notice Añade una nueva implementación base para los PBBs.
      * @dev Solo el propietario puede registrar implementaciones.
-     * @param version Versión que se asignará a la implementación.
-     * @param implementation Dirección del contrato base que se registra.
+     * @param version Versión asignada a la implementación.
+     * @param implementation Dirección del contrato base.
      */
-    function addImplementation(uint256 version, address implementation) external onlyOwner {
-        require(implementation != address(0), "Invalid implementation address");
-        require(implementations[version] == address(0), "Version already exists");
+    function addImplementation(uint256 version, address implementation) external onlyOwner notZeroAddress(implementation) {
+        require(implementations[version] == address(0), "La version ya existe");
+        
+        // Guardamos la dirección de la implementación para esa versión
         implementations[version] = implementation;
         emit ImplementationAdded(version, implementation);
     }
 
     /**
-     * @notice Crea un nuevo PBB basado en una implementación registrada.
-     * @dev Utiliza la librería Clones de OpenZeppelin para crear un contrato clon.
+     * @notice Crea un nuevo PBB como proxy UUPS basado en una implementación registrada.
      * @param version Versión del contrato base que se utilizará.
      * @param admin Dirección que será el administrador del nuevo PBB.
      * @param name Nombre del nuevo PBB.
      * @param authUsers Lista de direcciones de usuarios autorizados inicialmente.
      * @return La dirección del contrato PBB creado.
      */
-    function createPBB(uint256 version, address admin, string calldata name, address[] calldata authUsers) external returns (address) {
+    function createPBB(uint256 version, address admin, string calldata name, address[] calldata authUsers) external notZeroAddress(admin) returns (address) {
+        
+        // Obtenemos la implementación correspondiente a la versión solicitada
         address implementation = implementations[version];
-
-        require(authUsers.length > 0, "Must provide at least one authorized user"); 
         require(implementation != address(0), "Implementation not found for version");
-        require(bytes(name).length > 0, "Name cannot be empty");
+        require(bytes(name).length > 0, "El nombre no puede estar vacio");
 
-        // Codifica los datos de inicialización para la función `initialize`
+        // Codificamos los datos para inicializar el PBB usando la función `initialize` del contrato
         bytes memory initData = abi.encodeWithSelector(
-            bytes4(keccak256("initialize(string,address,address,address[])")),
+            PublicBulletinBoard.initialize.selector, // La función que queremos llamar
             name,
-            admin,
             msg.sender,
             authUsers
         );
 
-        // Despliega un nuevo proxy ERC-1967 con la implementación seleccionada
+        // Creamos el proxy UUPS apuntando a la implementación actual
         ERC1967Proxy proxy = new ERC1967Proxy(implementation, initData);
 
-        // Emitir evento para registrar el despliegue
+        // Guardamos la dirección del nuevo PBB en el mapping
+        pbbAddresses[pbbCount] = address(proxy);
+        pbbCount++;
+
+        // Emitimos un evento para que el frontend sepa que se ha creado un nuevo PBB
         emit PBBCreated(msg.sender, address(proxy), version, name);
 
-        return address(proxy);
-
+        return address(proxy);  // Devolvemos la dirección del proxy creado
     }
 }

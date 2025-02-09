@@ -1,4 +1,4 @@
-import { ethers, upgrades } from "hardhat";
+const { ethers, upgrades } = require("hardhat");
 
 async function upgradeProxy(proxyAddress: string, newImplementationName: string) {
   const NewImplementation = await ethers.getContractFactory(newImplementationName);
