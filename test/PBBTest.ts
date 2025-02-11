@@ -5,16 +5,16 @@ import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 
 describe("PublicBulletinBoard - Pruebas Integrales", function () {
   let pbb: PublicBulletinBoard;
-  let deployer: any, admin: any, user1: any, user2: any, user3: any;
+  let deployer: any, admin: any, user1: any, user2: any, user3: any, factory: any;
 
   beforeEach(async function () {
-    [deployer, admin, user1, user2, user3] = await ethers.getSigners();
+    [deployer, admin, user1, user2, user3, factory] = await ethers.getSigners();
 
     // Desplegamos el contrato proxy pasando "admin" como dueño y [user1] como usuario autorizado inicial.
     const pbbImpl = await ethers.getContractFactory("PublicBulletinBoard");
     pbb = (await upgrades.deployProxy(
       pbbImpl,
-      ["My PBB", admin.address, [user1.address]],
+      ["My PBB", admin.address, factory.address, [user1.address]],
       { initializer: "initialize" }
     )) as unknown as PublicBulletinBoard;
     await pbb.waitForDeployment();
@@ -31,7 +31,7 @@ describe("PublicBulletinBoard - Pruebas Integrales", function () {
     it("No debe permitir re-inicialización", async function () {
       // Intentamos desplegar otro proxy utilizando el mismo contrato lógico con `initialize`.
       await expect(
-      pbb.initialize("New PBB", admin.address, [])
+      pbb.initialize("New PBB", admin.address, factory.address, [])
       ).to.be.reverted;
     });
   });
@@ -165,7 +165,7 @@ describe("PublicBulletinBoard - Pruebas Integrales", function () {
       // Se realiza la actualización usando la cuenta owner (admin).
       const upgraded = (await upgrades.upgradeProxy(
         pbb,
-        pbbV2Factory.connect(admin)
+        pbbV2Factory.connect(factory)
       )) as unknown as PublicBulletinBoardV2;
 
       // Verificamos que el mensaje y la autorización se mantienen.

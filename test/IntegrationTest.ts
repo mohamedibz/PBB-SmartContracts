@@ -45,7 +45,7 @@ describe("Integration Test: Flujo completo de Public Bulletin Board", function (
     // Obtener el número actual de bloques
     const currentBlock = await ethers.provider.getBlockNumber();
 
-    await factory.createPBB(1, admin.address, "Test PBB", [user1.address]);
+    await factory.createPBB(1, "Test PBB", [user1.address]);
     
     // Consultar los eventos PBBCreated desde el bloque actual
     const events = await factory.queryFilter(filter, currentBlock);
@@ -125,20 +125,38 @@ describe("Integration Test: Flujo completo de Public Bulletin Board", function (
       const importedPBB = await upgrades.forceImport(proxyAddress, PBBV1Factory);
     
       console.log("Proxy importado con éxito:", await importedPBB.getAddress());
+
+
+
+
     
       // Solo el owner actual (admin) puede autorizar la actualización.
+      //const PBBV2Factory = await ethers.getContractFactory("PublicBulletinBoardV2");
+      //const upgradedPBB = (await upgrades.upgradeProxy(proxyAddress, PBBV2Factory.connect(admin))) as unknown as PublicBulletinBoard;
+      
+      // Desplegamos la nueva implementación V2
       const PBBV2Factory = await ethers.getContractFactory("PublicBulletinBoardV2");
-      const upgradedPBB = (await upgrades.upgradeProxy(proxyAddress, PBBV2Factory.connect(admin))) as unknown as PublicBulletinBoard;
-    
+      const newImplementation = await PBBV2Factory.deploy();
+      await newImplementation.waitForDeployment();
+      console.log("Nueva implementación V2 desplegada en:", await newImplementation.getAddress());
+
+      // Añadimos la nueva implementación a la Factory
+      await factory.connect(deployer).addImplementation(2, await newImplementation.getAddress());
+
+      // Actualizamos la PBB específica a la nueva implementación usando la Factory
+      await factory.connect(deployer).updatePBB(await pbb.getAddress(), 2);
+
+
+
       // Verificamos que el estado (mensajes, autorizaciones) se mantiene tras la actualización
-      expect(await upgradedPBB.nextMessageId()).to.equal(msgCountBefore);
+      expect(await pbb.nextMessageId()).to.equal(msgCountBefore);
     
       // Verificamos que el mensaje agregado antes de la actualización sigue presente
-      const preUpgradeMsg = await upgradedPBB.getMessageById(BigInt(msgCountBefore) - 1n);
+      const preUpgradeMsg = await pbb.getMessageById(BigInt(msgCountBefore) - 1n);
       expect(preUpgradeMsg.content).to.equal(ethers.encodeBytes32String("Mensaje antes de upgrade"));
     
       // Verificamos que la nueva versión del contrato retorna 2
-      expect(await upgradedPBB.version()).to.equal(2);
+      expect(await pbb.version()).to.equal(2);
     });
     
 
@@ -191,12 +209,7 @@ describe("Simulación Frontend: Múltiples PBBs, autorizaciones y revocaciones",
 
       // Para cada PBB, se utiliza la factory para crearlo y se extrae el address del evento emitido
       for (let i = 0; i < pbbNames.length; i++) {
-        await factory.createPBB(
-          1,
-          admin.address,
-          pbbNames[i],
-          authUsersPerPBB[i]
-        );
+        await factory.createPBB(1, pbbNames[i], authUsersPerPBB[i]);
 
         // Filtramos el evento PBBCreated y obtenemos la dirección del proxy creado
         // Consultar los eventos PBBCreated desde el bloque actual

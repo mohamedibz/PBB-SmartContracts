@@ -21,6 +21,7 @@ contract PublicBulletinBoard is Initializable, OwnableUpgradeable, UUPSUpgradeab
         uint256 timestamp;
     }
 
+    address factory;
     string public name;
     mapping(uint256 => Message) public messages;
     mapping(address => bool) public authorizedUsers;
@@ -32,7 +33,7 @@ contract PublicBulletinBoard is Initializable, OwnableUpgradeable, UUPSUpgradeab
 
     event MessageAdded(address indexed sender, string content, string topic, uint256 timestamp);
 
-    event UserAuthorized(address indexed owner, address indexed newUser, uint256 timestamp);
+    event UserAuthorized(address indexed admin, address indexed newUser, uint256 timestamp);
 
     event UserRevoked(address indexed owner, address indexed user, uint256 timestamp);
 
@@ -40,15 +41,17 @@ contract PublicBulletinBoard is Initializable, OwnableUpgradeable, UUPSUpgradeab
 
 
     // ===== Inicialización del contrato =====
-    function initialize(string calldata _name, address _owner, address[] calldata _authUsers) external initializer {
+    function initialize(string calldata _name, address _owner, address _factory, address[] calldata _authUsers) external initializer {
         __Ownable_init(_owner);
         __UUPSUpgradeable_init();
         
+        factory = _factory;
         name = _name;
         nextMessageId = 1;
 
         for (uint256 i = 0; i < _authUsers.length; i++) {
             authorizedUsers[_authUsers[i]] = true;
+            emit UserAuthorized(owner(), _authUsers[i], block.timestamp);
         }
     }
 
@@ -64,17 +67,21 @@ contract PublicBulletinBoard is Initializable, OwnableUpgradeable, UUPSUpgradeab
     _;
     }
 
+    modifier onlyFactory(address _addr) {
+    require(_addr == factory, "No estas autorizado para realizar esta accion");
+    _;
+    }
 
-    // ESTO LO DEJO PARA DESPUES
+
     // ===== Actualización del contrato (UUPS) =====
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner notZeroAddress(newImplementation) { }
+    function _authorizeUpgrade(address newImplementation) internal override onlyFactory(msg.sender) notZeroAddress(newImplementation) { }
 
 
     // TRANSFERIR ADMIN
     function transferAdmin(address newAdmin) external onlyOwner notZeroAddress(newAdmin) {
         address admin = owner();
         _transferOwnership(newAdmin);
-        emit AdminTransferred(admin, newAdmin, block.timestamp);
+        emit AdminTransferred(admin, newAdmin, block.timestamp); 
 
     }
 
