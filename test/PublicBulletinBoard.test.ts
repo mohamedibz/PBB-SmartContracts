@@ -299,7 +299,7 @@ describe("PublicBulletinBoard", function () {
         // Se verifica que el comentario se haya almacenado correctamente.
         // Como en el contrato se define el mapping como: mapping(uint256 => string[]) public messageComments;
         // Podemos acceder al comentario usando dos parámetros: el ID del mensaje y la posición del comentario en el array.
-        const comment = await upgraded.messageComments(1, 0);
+        const comment = (await upgraded.getComment(1, 0)).content;
         expect(comment).to.equal("Este es un comentario de prueba");
       });
   
@@ -318,6 +318,7 @@ describe("PublicBulletinBoard", function () {
    *                          PRUEBAS DE UTILIDADES                 *
    ******************************************************************/
   describe("Utilities", function () {
+
     it("should return the correct contract version", async function () {
       expect(await pbb.version()).to.equal(1);
     });

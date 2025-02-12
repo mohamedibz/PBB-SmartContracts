@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy:alchemy": "npx hardhat run scripts/deploy.ts --network alchemy",
+    "deploy:localhost": "npx hardhat run scripts/deploy.ts --network localhost",
+    "verify:alchemy": "npx hardhat run scripts/verify.ts --network alchemy"
   },
   "keywords": [],
   "author": "",
