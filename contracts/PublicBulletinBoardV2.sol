@@ -78,4 +78,5 @@ contract PublicBulletinBoardV2 is PublicBulletinBoard {
     function version() public pure override returns (uint256) {
         return 2;
     }
+
 }

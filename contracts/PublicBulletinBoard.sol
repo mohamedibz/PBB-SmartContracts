@@ -5,24 +5,22 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
+
+import "./IPublicBulletinBoard.sol";
 
 /**
  * @title Public Bulletin Board (PBB)
  * @notice Este contrato permite la creación de boletines públicos donde los usuarios autorizados pueden publicar mensajes.
  * @dev Compatible con el patrón proxy UUPS para actualizaciones individuales. Utiliza AccessControl para gestionar permisos.
  */
-contract PublicBulletinBoard is Initializable, UUPSUpgradeable, ReentrancyGuardUpgradeable, AccessControlEnumerableUpgradeable {
+contract PublicBulletinBoard is 
+    Initializable, 
+    UUPSUpgradeable, 
+    ReentrancyGuardUpgradeable, 
+    AccessControlEnumerableUpgradeable, 
+    IPublicBulletinBoard {
     
-    // ===== Estructuras y constantes =====
-
-    struct Message {
-        uint256 id;
-        address sender;
-        bytes32 content;
-        bytes32 topic;
-        uint256 timestamp;
-    }
-
     string public name;
     mapping(uint256 => Message) public messages;
     uint256 public nextMessageId;
@@ -33,14 +31,8 @@ contract PublicBulletinBoard is Initializable, UUPSUpgradeable, ReentrancyGuardU
     bytes32 public constant MEMBER_ROLE = keccak256("MEMBER_ROLE");
     bytes32 public constant DEVELOPER_ROLE = keccak256("DEVELOPER_ROLE");
 
+    uint256[100] private __gap;
 
-    // ===== Eventos =====
-
-    event MessageAdded(address indexed sender, string content, string topic, uint256 timestamp);
-    event AdminAdded(address indexed admin, address indexed newAdmin, uint256 timestamp);
-    event AdminRevoked(address indexed admin, address indexed revokedAdmin, uint256 timestamp);
-    event MemberAdded(address indexed admin, address indexed newMember, uint256 timestamp);
-    event MemberRemoved(address indexed admin, address indexed revokedMember, uint256 timestamp);
 
     // ===== Modificadores =====
 
@@ -48,6 +40,18 @@ contract PublicBulletinBoard is Initializable, UUPSUpgradeable, ReentrancyGuardU
     require(_addr != address(0), "Direccion no puede ser la direccion cero");
     _;
     }
+
+    // ===== Constructor del contrato =====
+
+    /**
+     * @notice Constructor que deshabilita inicializadores para prevenir tomas de control.
+     * @dev Llama a `_disableInitializers()` para evitar que el contrato pueda ser inicializado fuera de un proxy.
+     * @custom:oz-upgrades-unsafe-allow constructor
+     */
+    constructor() {
+        _disableInitializers();
+    }
+
 
     // ===== Inicialización del contrato =====
     
@@ -83,7 +87,12 @@ contract PublicBulletinBoard is Initializable, UUPSUpgradeable, ReentrancyGuardU
      * @dev Autoriza actualizaciones del contrato solo para el contrato factory.
      * @param newImplementation Dirección de la nueva implementación.
      */
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEVELOPER_ROLE) notZeroAddress(newImplementation) { }
+    function _authorizeUpgrade(address newImplementation) internal view override onlyRole(DEVELOPER_ROLE) notZeroAddress(newImplementation) {
+        require(
+            IPublicBulletinBoard(newImplementation).supportsInterface(type(IPublicBulletinBoard).interfaceId),
+            "Implementacion incompatible"
+        );
+    }
 
     // ===== Gestión de Mensajes =====
 
@@ -227,6 +236,15 @@ contract PublicBulletinBoard is Initializable, UUPSUpgradeable, ReentrancyGuardU
             result[i] = data[i];
         }
         return string(result);
+    }
+
+    /**
+     * @notice Indica que este contrato soporta `IPublicBulletinBoard` y otras interfaces heredadas.
+     * @dev Sobrescribe `supportsInterface()` para reflejar compatibilidad con `IPublicBulletinBoard`.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, AccessControlEnumerableUpgradeable) returns (bool) {
+        return interfaceId == type(IPublicBulletinBoard).interfaceId || 
+            super.supportsInterface(interfaceId);
     }
 
 }

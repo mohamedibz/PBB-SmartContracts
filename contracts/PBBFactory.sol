@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol"; // Para crear proxies UUPS
-
+import "./IPublicBulletinBoard.sol";
 
 /**
  * @title IUpgradeableProxy
@@ -38,6 +38,7 @@ contract PBBFactory is AccessControl  {
     event PBBCreated(address indexed creator, address indexed pbbAddress, uint256 version, string name);
     event ImplementationAdded(address implementation, uint256 version);
     event PBBUpdated(address indexed pbbAddress, uint256 version);
+    event FailedUpdate(address indexed pbbAddress, uint256 version);
     
     /**
      * @dev Modificador para verificar que la dirección no sea la dirección cero.
@@ -62,6 +63,13 @@ contract PBBFactory is AccessControl  {
      * @dev Solo accesible para cuentas con el rol `DEVELOPER_ROLE`.
      */
     function addImplementation(uint256 version, address implementation) external onlyRole(DEVELOPER_ROLE) notZeroAddress(implementation) {
+        
+        try IPublicBulletinBoard(implementation).supportsInterface(type(IPublicBulletinBoard).interfaceId) returns (bool result) {
+            require(result, "Implementacion incompatible con IPublicBulletinBoard");
+        } catch {
+            revert("Error al verificar la compatibilidad de la implementacion");
+        }
+        
         require(implementations[version] == address(0), "La version ya existe");
         
         implementations[version] = implementation;
@@ -107,6 +115,15 @@ contract PBBFactory is AccessControl  {
 
         require(implementations[version] != address(0), "Implementacion no valida");
         require(pbbVersion[pbbAddress] != version, "El boletin ya esta actualizado a esta version");
+
+        address newImplementation = implementations[version];
+
+        try IPublicBulletinBoard(newImplementation).supportsInterface(type(IPublicBulletinBoard).interfaceId) returns (bool result) {
+            require(result, "Implementacion incompatible con IPublicBulletinBoard");
+        } catch {
+            emit FailedUpdate(pbbAddress, version);
+            revert("Fallo en la verificacion de compatibilidad");
+        }
 
         try IUpgradeableProxy(pbbAddress).upgradeToAndCall(implementations[version], new bytes(0)) {
             pbbVersion[pbbAddress] = version;
