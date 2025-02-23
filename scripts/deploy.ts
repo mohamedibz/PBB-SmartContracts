@@ -1,17 +1,18 @@
 import * as fs from "fs";
-import { deployFactory, deployBaseImplementation, registerImplementation } from "./deployFunctions";
+import { deployFactory, deployBaseImplementation, deployBaseV2Implementation, registerImplementation } from "./deployFunctions";
 
 // Definimos una interfaz para las direcciones desplegadas
 interface Deployments {
   factory: string;
   pbbBase: string;
+  pbbBaseV2: string;
 }
 
 // Función para leer y actualizar el archivo deployments.json
 function updateDeploymentsFile(newDeployments: Deployments) {
-  const filePath = "./scripts/deployments.json";
+  const filePath = "./reports/deployments.json";
 
-  let existingDeployments: Deployments = { factory: "", pbbBase: "" };
+  let existingDeployments: Deployments = { factory: "", pbbBase: "" , pbbBaseV2: ""};
 
   // Si el archivo no existe, crearlo vacío
   if (!fs.existsSync(filePath)) {
@@ -38,11 +39,16 @@ async function main() {
   const pbbBase = await deployBaseImplementation();
   const baseAddress = await pbbBase.getAddress();
 
+  // DESPLEGAR LA IMPLEMENTACIÓN BASE PARA PBB
+  const pbbBaseV2 = await deployBaseV2Implementation();
+  const baseAddressV2 = await pbbBaseV2.getAddress();
+
   // REGISTRAR LA IMPLEMENTACIÓN EN LA FÁBRICA
   await registerImplementation(factory, 1, baseAddress);
 
   // Actualizar el archivo deployments.json con las nuevas direcciones
-  updateDeploymentsFile({ factory: factoryAddress, pbbBase: baseAddress });
+  updateDeploymentsFile({ factory: factoryAddress, pbbBase: baseAddress, pbbBaseV2: baseAddressV2});
+
 }
 
 main().catch((error) => {

@@ -20,6 +20,15 @@ export async function deployBaseImplementation() {
   return pbbBase;
 }
 
+// Desplegar la implementación base para PBB
+export async function deployBaseV2Implementation() {
+  const PublicBulletinBoardV2 = await ethers.getContractFactory("PublicBulletinBoardV2");
+  const pbbBaseV2 = await PublicBulletinBoardV2.deploy();
+  await pbbBaseV2.waitForDeployment();
+  console.log(chalk.green(" ✔️ PublicBulletinBoardV2 desplegado en:", await pbbBaseV2.getAddress()));
+  return pbbBaseV2;
+}
+
 // Registrar implementación en la fábrica
 export async function registerImplementation(factory: any, version: number, implementationAddress: string) {
   const registerTx = await factory.addImplementation(version, implementationAddress);
