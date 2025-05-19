@@ -297,10 +297,9 @@ describe("PublicBulletinBoard", function () {
         await upgraded.connect(member).addComment(1, "Este es un comentario de prueba");
   
         // Se verifica que el comentario se haya almacenado correctamente.
-        // Como en el contrato se define el mapping como: mapping(uint256 => string[]) public messageComments;
         // Podemos acceder al comentario usando dos parámetros: el ID del mensaje y la posición del comentario en el array.
         const comment = (await upgraded.getComment(1, 0)).content;
-        expect(comment).to.equal("Este es un comentario de prueba");
+        expect(comment).to.equal(ethers.encodeBytes32String("Este es un comentario de prueba"));
       });
   
       it("should revert when a non-member tries to add a comment", async function () {

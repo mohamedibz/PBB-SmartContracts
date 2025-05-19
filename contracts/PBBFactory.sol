@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol"; // Para crear proxies UUPS
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./IPublicBulletinBoard.sol";
 
 /**
@@ -24,7 +25,7 @@ interface IUpgradeableProxy {
  * @notice Fábrica para crear y administrar Public Bulletin Boards (PBBs) usando proxies UUPS.
  * @dev Utiliza AccessControl para el manejo de permisos y roles. Las implementaciones de PBB se actualizan mediante `upgradeToAndCall`.
  */
-contract PBBFactory is AccessControl  {
+contract PBBFactory is AccessControl, ReentrancyGuard {
 
     bytes32 public constant DEVELOPER_ROLE = keccak256("DEVELOPER_ROLE");
 
@@ -40,6 +41,8 @@ contract PBBFactory is AccessControl  {
     event PBBUpdated(address indexed pbbAddress, uint256 version);
     event FailedUpdate(address indexed pbbAddress, uint256 version);
     
+    uint256[50] private __gap;
+
     /**
      * @dev Modificador para verificar que la dirección no sea la dirección cero.
      */
@@ -111,7 +114,7 @@ contract PBBFactory is AccessControl  {
      * @param version Versión de la nueva implementación.
      * @dev Solo accesible para cuentas con el rol `DEVELOPER_ROLE`.
      */
-    function updatePBB(address pbbAddress, uint256 version) external onlyRole(DEVELOPER_ROLE) notZeroAddress(pbbAddress) {
+    function updatePBB(address pbbAddress, uint256 version) external nonReentrant onlyRole(DEVELOPER_ROLE) notZeroAddress(pbbAddress) {
 
         require(implementations[version] != address(0), "Implementacion no valida");
         require(pbbVersion[pbbAddress] != version, "El boletin ya esta actualizado a esta version");
@@ -125,12 +128,13 @@ contract PBBFactory is AccessControl  {
             revert("Fallo en la verificacion de compatibilidad");
         }
 
+        pbbVersion[pbbAddress] = version;
+
         try IUpgradeableProxy(pbbAddress).upgradeToAndCall(implementations[version], new bytes(0)) {
-            pbbVersion[pbbAddress] = version;
             emit PBBUpdated(pbbAddress, version);
-            pbbVersion[pbbAddress] = version;
 
         } catch {
+            pbbVersion[pbbAddress] = 0;
             revert("Fallo en la actualizacion de la PBB");
         }
         

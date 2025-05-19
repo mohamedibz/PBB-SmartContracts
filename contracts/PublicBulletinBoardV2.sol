@@ -12,7 +12,7 @@ contract PublicBulletinBoardV2 is PublicBulletinBoard {
     
     struct Comment {
         address commenter;
-        string content;
+        bytes32 content;
         uint256 timestamp;
     }
     
@@ -33,10 +33,12 @@ contract PublicBulletinBoardV2 is PublicBulletinBoard {
         require(bytes(comment).length > 0, "El comentario no puede estar vacio");
 
         uint256 currentCommentId = commentCount[messageId];
+
+        bytes32 commentBytes = _toBytes32(comment);
         
         comments[messageId][currentCommentId] = Comment({
             commenter: msg.sender,
-            content: comment,
+            content: commentBytes,
             timestamp: block.timestamp
         });
 
@@ -49,16 +51,14 @@ contract PublicBulletinBoardV2 is PublicBulletinBoard {
      * @notice Recupera un comentario específico de un mensaje.
      * @param messageId ID del mensaje.
      * @param commentId ID del comentario.
-     * @return commenter Dirección del usuario que comentó.
-     * @return content Contenido del comentario.
-     * @return timestamp Marca de tiempo del comentario.
+     * @return El comentario solicitado.
      */
-    function getComment(uint256 messageId, uint256 commentId) external view returns (address commenter, string memory content, uint256 timestamp) {
+    function getComment(uint256 messageId, uint256 commentId) external view returns (Comment memory) {
         require(messageId > 0 && messageId < nextMessageId, "ID de mensaje no valido");
         require(commentId < commentCount[messageId], "ID de comentario no valido");
 
         Comment storage comment = comments[messageId][commentId];
-        return (comment.commenter, comment.content, comment.timestamp);
+        return comment;
     }
 
     /**
